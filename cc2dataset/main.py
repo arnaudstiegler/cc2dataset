@@ -17,6 +17,7 @@ import math
 import time
 from .spark_session_builder import build_spark_session
 from io import BytesIO
+import fire
 
 
 def valid_video_link(link):
@@ -94,6 +95,23 @@ def extract_image_from_links(links):
     return filtered_links
 
 
+def valid_pdf_link(link):
+    if not link.get("url", "").startswith("http"):
+        return False
+    splits = link.get("url", "").split(".")
+    if len(splits) < 2:
+        return False
+    if splits[-1] != 'pdf':
+        return False
+    return True
+
+
+def extract_pdf_from_links(links):
+    filtered_links = [{"url": link["url"], "alt": link.get("text", "")} for link in links if
+                      valid_pdf_link(link)]
+    return filtered_links
+
+
 def extract_documents_from_links(links, document_type):
     """Extract documents from links ; this function returns a list of dict {"alt": ..., "url": ...}"""
 
@@ -105,6 +123,8 @@ def extract_documents_from_links(links, document_type):
         return extract_text_from_links(links)
     elif document_type == "video":
         return extract_video_from_links(links)
+    elif document_type == "pdfs":
+        return extract_pdf_from_links(links)
     else:
         raise ValueError(f"Unknown document type {document_type}")
 
@@ -244,7 +264,6 @@ def process_one_part(output_path, wat_index_files, build_spark, shuffle, documen
 
     output = wat_rdd.mapPartitions(extract)
     df = output.toDF(["uid", "url", "alt"])
-
     deduplicate_repartition_count(df, output_path, wat_count, spark, shuffle)
 
 
