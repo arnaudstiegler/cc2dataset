@@ -101,7 +101,7 @@ def valid_pdf_link(link):
     splits = link.get("url", "").split(".")
     if len(splits) < 2:
         return False
-    if splits[-1] != 'pdf':
+    if 'pdf' not in link.get("url", ""):
         return False
     return True
 
